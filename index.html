@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Digital Card</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* =========================================
+           1. المتغيرات والخلفية
+           ========================================= */
+        :root {
+            --gold-primary: #d4af37;
+            --gold-light: #f3e5ab;
+            --dark-bg: #0a0a0a;
+            --glass-bg: rgba(18, 18, 18, 0.55);
+            --glass-border: rgba(212, 175, 55, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at 50% 50%, #1a1608 0%, #050505 100%);
+            overflow-x: hidden;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .ambient-light {
+            position: fixed;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+            border-radius: 50%;
+            animation: floatGlow 15s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(-10%, -10%) scale(1); }
+            100% { transform: translate(10%, 10%) scale(1.2); }
+        }
+
+        /* =========================================
+           2. البطاقة وتنسيقاتها
+           ========================================= */
+        .tilt-wrapper {
+            perspective: 1000px;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px;
+            margin: 20px 0;
+        }
+
+        .vip-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 45px 30px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(212, 175, 55, 0.05);
+            transition: transform 0.1s ease;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .avatar-glow {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #2a2a2a, #111);
+            border: 2px solid var(--gold-primary);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 45px;
+            color: var(--gold-light);
+            cursor: pointer; 
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .avatar-glow:active { transform: scale(0.95); }
+
+        .name { font-size: 26px; font-weight: 700; color: var(--gold-primary); margin-bottom: 5px; }
+        .job-title { font-size: 14px; color: #a0a0a0; }
+
+        .action-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 12px 20px;
+            transition: 0.3s;
+        }
+        
+        .clickable-row { cursor: pointer; text-decoration: none; color: inherit; }
+        .clickable-row:hover { background: rgba(212, 175, 55, 0.05); border-color: rgba(212, 175, 55, 0.3); }
+
+        .info-icon {
+            font-size: 22px;
+            color: var(--gold-primary);
+            margin-inline-end: 15px;
+        }
+
+        .info-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .info-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+        .info-value { font-size: 14px; color: #ddd; font-family: 'Tajawal', monospace; word-break: break-word; text-align: start; line-height: 1.4; }
+
+        .accordion-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            cursor: pointer;
+        }
+
+        .accordion-header .title { flex-grow: 1; font-size: 15px; font-weight: 700; text-align: start; }
+        .arrow { color: #888; font-size: 14px; transition: 0.3s; }
+
+        .accordion-content-wrapper { display: grid; grid-template-rows: 0fr; transition: 0.4s; }
+        .accordion-inner { overflow: hidden; }
+        .bank-details { padding: 0 20px 20px; }
+
+        .accordion-item.open { background: rgba(10, 10, 10, 0.8); border-color: rgba(212, 175, 55, 0.5); }
+        .accordion-item.open .accordion-content-wrapper { grid-template-rows: 1fr; }
+        .accordion-item.open .arrow { transform: rotate(180deg); color: var(--gold-primary); }
+
+        /* زر المشاركة الأنيق */
+        .share-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gold-primary), #aa8529);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+        }
+
+        .share-btn i { font-size: 20px; }
+
+        /* =========================================
+           3. لوحة تحكم الأدمن
+           ========================================= */
+        .admin-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+            z-index: 1000; display: none; justify-content: center;
+            align-items: center; padding: 20px; opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        .admin-modal {
+            background: #111; border: 1px solid var(--gold-primary); border-radius: 20px;
+            padding: 30px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); transform: scale(0.9); transition: transform 0.3s ease;
+        }
+
+        .admin-header { text-align: center; color: var(--gold-primary); font-size: 20px; margin-bottom: 20px; font-weight: 700; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 5px; text-align: start; }
+        .input-group input, .input-group textarea {
+            width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff; padding: 12px; border-radius: 10px; font-family: 'Tajawal', sans-serif;
+            outline: none; transition: 0.3s; text-align: start; resize: vertical;
+        }
+        .input-group input:focus, .input-group textarea:focus { border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.05); }
+
+        .file-upload-btn {
+            display: block; text-align: center; background: rgba(212, 175, 55, 0.1);
+            border: 1px dashed var(--gold-primary); color: var(--gold-primary);
+            padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 15px;
+        }
+        .file-upload-btn input[type="file"] { display: none; }
+
+        .admin-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save, .btn-cancel { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-save { background: var(--gold-primary); color: #000; }
+        .btn-cancel { background: #333; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-light"></div>
+
+    <div class="tilt-wrapper" id="tilt-wrapper">
+        <div class="vip-card" id="vip-card">
+            
+            <div class="profile-header">
+                <div class="avatar-glow" id="avatar-container" onclick="handleAvatarClick()">
+                    <i class="fa-solid fa-gem" id="default-icon"></i>
+                </div>
+                <div class="name" id="display-name">الاسم الكريم هنا</div>
+                <div class="job-title" id="display-job">مستشار أعمال ومالية</div>
+            </div>
+
+            <div class="action-list">
+                
+                <div class="info-row">
+                    <i class="fa-solid fa-location-dot info-icon"></i>
+                    <div class="info-content">
+                        <span class="info-label" data-i18n="addressLabel">العنوان</span>
+                        <span class="info-value" id="display-address">الرياض، المملكة العربية السعودية</span>
+                    </div>
+                </div>
+
+                <a href="#" id="wa-link" class="info-row clickable-row" target="_blank">
+                    <i class="fa-brands fa-whatsapp info-icon"></i>
+                    <div class="info-content">
+                        <span class="info-label" data-i18n="waLabel">التواصل المباشر</span>
+                        <span class="info-value" id="display-phone" dir="ltr">+966 50 000 0000</span>
+                    </div>
+                </a>
+
+                <div class="info-row">
+                    <i class="fa-regular fa-envelope info-icon"></i>
+                    <div class="info-content">
+                        <span class="info-label" data-i18n="emailLabel">البريد الرسمي</span>
+                        <span class="info-value" id="display-email" dir="ltr">contact@domain.com</span>
+                    </div>
+                </div>
+
+                <div class="accordion-item" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <i class="fa-solid fa-building-columns info-icon"></i>
+                        <span class="title" data-i18n="bankTitle">التحويل البنكي (IBAN)</span>
+                        <i class="fa-solid fa-chevron-down arrow"></i>
+                    </div>
+                    <div class="accordion-content-wrapper">
+                        <div class="accordion-inner">
+                            <div class="bank-details">
+                                <div class="info-row" style="background: rgba(0,0,0,0.4); border:none; padding: 10px 15px;" onclick="event.stopPropagation();">
+                                    <div class="info-content">
+                                        <span class="info-label" id="display-bank-name">مصرف الراجحي</span>
+                                        <span class="info-value" id="display-iban" dir="ltr">SA 00 0000 0000 0000 0000</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <i class="fa-brands fa-paypal info-icon"></i>
+                        <span class="title" data-i18n="paypalTitle">بوابة الدفع PayPal</span>
+                        <i class="fa-solid fa-chevron-down arrow"></i>
+                    </div>
+                    <div class="accordion-content-wrapper">
+                        <div class="accordion-inner">
+                            <div class="bank-details">
+                                <div class="info-row" style="background: rgba(0,0,0,0.4); border:none; padding: 10px 15px;" onclick="event.stopPropagation();">
+                                    <div class="info-content">
+                                        <span class="info-label" data-i18n="paypalLabel">حساب الباي بال</span>
+                                        <span class="info-value" id="display-paypal" dir="ltr">paypal@domain.com</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <i class="fa-solid fa-money-bill-transfer info-icon"></i>
+                        <span class="title" data-i18n="wiseTitle">حساب Wise الدولي</span>
+                        <i class="fa-solid fa-chevron-down arrow"></i>
+                    </div>
+                    <div class="accordion-content-wrapper">
+                        <div class="accordion-inner">
+                            <div class="bank-details">
+                                <div class="info-row" style="background: rgba(0,0,0,0.4); border:none; padding: 10px 15px;" onclick="event.stopPropagation();">
+                                    <div class="info-content">
+                                        <span class="info-label" data-i18n="wiseLabel">معرف أو بريد Wise</span>
+                                        <span class="info-value" id="display-wise" dir="ltr">wise@domain.com</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="share-btn" onclick="shareCard()">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span data-i18n="shareBtn">مشاركة البطاقة</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-overlay" id="admin-overlay">
+        <div class="admin-modal" id="admin-modal">
+            <div class="admin-header"><i class="fa-solid fa-user-shield"></i> <span data-i18n="adminHeader">لوحة الإدارة السريّة</span></div>
+            
+            <label class="file-upload-btn">
+                <i class="fa-solid fa-camera"></i> <span data-i18n="changePic">تغيير الصورة الشخصية</span>
+                <input type="file" id="input-image" accept="image/*" onchange="previewImage(event)">
+            </label>
+
+            <div class="input-group">
+                <label data-i18n="nameInput">الاسم</label>
+                <input type="text" id="input-name">
+            </div>
+            <div class="input-group">
+                <label data-i18n="jobInput">المسمى الوظيفي</label>
+                <input type="text" id="input-job">
+            </div>
+            <div class="input-group">
+                <label data-i18n="addressInput">العنوان / المقر</label>
+                <input type="text" id="input-address">
+            </div>
+            <div class="input-group">
+                <label data-i18n="phoneInput">رقم الجوال (مع الرمز الدولي)</label>
+                <input type="text" id="input-phone" dir="ltr">
+            </div>
+            <div class="input-group">
+                <label data-i18n="emailInput">البريد الإلكتروني</label>
+                <input type="email" id="input-email" dir="ltr">
+            </div>
+            <div class="input-group">
+                <label data-i18n="bankInput">اسم البنك</label>
+                <input type="text" id="input-bank-name">
+            </div>
+            <div class="input-group">
+                <label data-i18n="ibanInput">رقم الحساب (IBAN)</label>
+                <input type="text" id="input-iban" dir="ltr">
+            </div>
+            <div class="input-group">
+                <label data-i18n="paypalInput">حساب PayPal</label>
+                <input type="text" id="input-paypal" dir="ltr">
+            </div>
+            <div class="input-group">
+                <label data-i18n="wiseInput">حساب Wise</label>
+                <input type="text" id="input-wise" dir="ltr">
+            </div>
+
+            <div class="admin-actions">
+                <button class="btn-cancel" onclick="closeAdmin()" data-i18n="cancelBtn">إلغاء</button>
+                <button class="btn-save" onclick="saveAdminData()" data-i18n="saveBtn">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================
+           نظام الترجمة والتكيف مع لغة الهاتف
+           ========================================= */
+        const translations = {
+            ar: {
+                addressLabel: "العنوان الرئيسي",
+                waLabel: "التواصل المباشر عبر واتساب",
+                emailLabel: "البريد الرسمي",
+                bankTitle: "التحويل البنكي (IBAN)",
+                paypalTitle: "بوابة الدفع PayPal",
+                wiseTitle: "حساب Wise الدولي",
+                paypalLabel: "حساب الباي بال",
+                wiseLabel: "معرف أو بريد Wise",
+                shareBtn: "مشاركة البطاقة",
+                shareTitle: "البطاقة الرقمية الخاصة بي",
+                shareText: "يسعدني تواصلك معي، تفضل بحفظ بياناتي عبر بطاقتي الرقمية:",
+                adminHeader: "لوحة الإدارة السريّة",
+                changePic: "تغيير الصورة الشخصية",
+                nameInput: "الاسم",
+                jobInput: "المسمى الوظيفي",
+                addressInput: "العنوان / المقر",
+                phoneInput: "رقم الجوال (مع الرمز الدولي)",
+                emailInput: "البريد الإلكتروني",
+                bankInput: "اسم البنك",
+                ibanInput: "رقم الحساب (IBAN)",
+                paypalInput: "حساب PayPal",
+                wiseInput: "حساب Wise",
+                cancelBtn: "إلغاء",
+                saveBtn: "حفظ التعديلات",
+                copySuccess: "تم نسخ الرابط بنجاح!"
+            },
+            en: {
+                addressLabel: "Main Address",
+                waLabel: "Direct WhatsApp Contact",
+                emailLabel: "Official Email",
+                bankTitle: "Bank Transfer (IBAN)",
+                paypalTitle: "PayPal Payment",
+                wiseTitle: "Wise International",
+                paypalLabel: "PayPal Account",
+                wiseLabel: "Wise ID / Email",
+                shareBtn: "Share My Card",
+                shareTitle: "My Digital Business Card",
+                shareText: "I'd love to connect! Here is my digital business card:",
+                adminHeader: "Secret Admin Panel",
+                changePic: "Change Profile Picture",
+                nameInput: "Full Name",
+                jobInput: "Job Title",
+                addressInput: "Address / Location",
+                phoneInput: "Phone Number (with country code)",
+                emailInput: "Email Address",
+                bankInput: "Bank Name",
+                ibanInput: "IBAN Number",
+                paypalInput: "PayPal Account",
+                wiseInput: "Wise Account",
+                cancelBtn: "Cancel",
+                saveBtn: "Save Changes",
+                copySuccess: "Link copied to clipboard!"
+            }
+        };
+
+        function applyDeviceLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            const langCode = userLang.startsWith('ar') ? 'ar' : 'en';
+            
+            document.documentElement.lang = langCode;
+            document.documentElement.dir = langCode === 'ar' ? 'rtl' : 'ltr';
+
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[langCode][key]) {
+                    element.innerText = translations[langCode][key];
+                }
+            });
+        }
+
+        /* =========================================
+           نظام المشاركة الذكي (Native Share API)
+           ========================================= */
+        function shareCard() {
+            const langCode = document.documentElement.lang;
+            const title = translations[langCode].shareTitle;
+            const text = translations[langCode].shareText;
+            const url = window.location.href; // يأخذ الرابط الحالي للصفحة
+
+            if (navigator.share) {
+                // إذا كان الهاتف يدعم قائمة المشاركة الأصلية
+                navigator.share({
+                    title: title,
+                    text: text,
+                    url: url
+                }).catch(console.error);
+            } else {
+                // في حال متصفحات الكمبيوتر القديمة، يقوم بنسخ الرابط
+                navigator.clipboard.writeText(url).then(() => {
+                    alert(translations[langCode].copySuccess);
+                });
+            }
+        }
+
+        /* =========================================
+           تحديث رابط الواتساب الديناميكي
+           ========================================= */
+        function updateWhatsAppLink() {
+            let phone = document.getElementById('display-phone').innerText;
+            let cleanPhone = phone.replace(/[^\d+]/g, '');
+            document.getElementById('wa-link').href = "https://wa.me/" + cleanPhone;
+        }
+
+        /* =========================================
+           نظام فتح وطي الأقسام
+           ========================================= */
+        function toggleAccordion(element) {
+            const isOpen = element.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(item => item.classList.remove('open'));
+            if (!isOpen) element.classList.add('open');
+        }
+
+        /* =========================================
+           نظام وضع المطور (5 نقرات)
+           ========================================= */
+        let clickCount = 0;
+        let clickTimer;
+
+        function handleAvatarClick() {
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+
+            if (clickCount === 5) {
+                openAdmin();
+                clickCount = 0; 
+            }
+        }
+
+        /* =========================================
+           منطق لوحة التحكم وحفظ البيانات
+           ========================================= */
+        let currentBase64Image = "";
+
+        window.onload = function() {
+            applyDeviceLanguage();
+            loadSavedData();
+            updateWhatsAppLink();
+        };
+
+        function openAdmin() {
+            const overlay = document.getElementById('admin-overlay');
+            const modal = document.getElementById('admin-modal');
+            
+            document.getElementById('input-name').value = document.getElementById('display-name').innerText;
+            document.getElementById('input-job').value = document.getElementById('display-job').innerText;
+            document.getElementById('input-address').value = document.getElementById('display-address').innerText;
+            document.getElementById('input-phone').value = document.getElementById('display-phone').innerText;
+            document.getElementById('input-email').value = document.getElementById('display-email').innerText;
+            document.getElementById('input-bank-name').value = document.getElementById('display-bank-name').innerText;
+            document.getElementById('input-iban').value = document.getElementById('display-iban').innerText;
+            document.getElementById('input-paypal').value = document.getElementById('display-paypal').innerText;
+            document.getElementById('input-wise').value = document.getElementById('display-wise').innerText;
+
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        function closeAdmin() {
+            const overlay = document.getElementById('admin-overlay');
+            const modal = document.getElementById('admin-modal');
+            
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentBase64Image = e.target.result;
+                    alert(document.documentElement.lang === 'ar' ? "تم تحميل الصورة. اضغط حفظ لتطبيقها." : "Image loaded. Click Save.");
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveAdminData() {
+            document.getElementById('display-name').innerText = document.getElementById('input-name').value;
+            document.getElementById('display-job').innerText = document.getElementById('input-job').value;
+            document.getElementById('display-address').innerText = document.getElementById('input-address').value;
+            document.getElementById('display-phone').innerText = document.getElementById('input-phone').value;
+            document.getElementById('display-email').innerText = document.getElementById('input-email').value;
+            document.getElementById('display-bank-name').innerText = document.getElementById('input-bank-name').value;
+            document.getElementById('display-iban').innerText = document.getElementById('input-iban').value;
+            document.getElementById('display-paypal').innerText = document.getElementById('input-paypal').value;
+            document.getElementById('display-wise').innerText = document.getElementById('input-wise').value;
+
+            if (currentBase64Image) {
+                document.getElementById('avatar-container').style.backgroundImage = `url(${currentBase64Image})`;
+                document.getElementById('default-icon').style.display = 'none';
+                localStorage.setItem('vipCardImage', currentBase64Image); 
+            }
+
+            localStorage.setItem('vipCardData', JSON.stringify({
+                name: document.getElementById('input-name').value,
+                job: document.getElementById('input-job').value,
+                address: document.getElementById('input-address').value,
+                phone: document.getElementById('input-phone').value,
+                email: document.getElementById('input-email').value,
+                bankName: document.getElementById('input-bank-name').value,
+                iban: document.getElementById('input-iban').value,
+                paypal: document.getElementById('input-paypal').value,
+                wise: document.getElementById('input-wise').value
+            }));
+
+            updateWhatsAppLink();
+            closeAdmin();
+        }
+
+        function loadSavedData() {
+            const savedData = localStorage.getItem('vipCardData');
+            const savedImage = localStorage.getItem('vipCardImage');
+
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                if(data.name) document.getElementById('display-name').innerText = data.name;
+                if(data.job) document.getElementById('display-job').innerText = data.job;
+                if(data.address) document.getElementById('display-address').innerText = data.address;
+                if(data.phone) document.getElementById('display-phone').innerText = data.phone;
+                if(data.email) document.getElementById('display-email').innerText = data.email;
+                if(data.bankName) document.getElementById('display-bank-name').innerText = data.bankName;
+                if(data.iban) document.getElementById('display-iban').innerText = data.iban;
+                if(data.paypal) document.getElementById('display-paypal').innerText = data.paypal;
+                if(data.wise) document.getElementById('display-wise').innerText = data.wise;
+            }
+
+            if (savedImage) {
+                document.getElementById('avatar-container').style.backgroundImage = `url(${savedImage})`;
+                document.getElementById('default-icon').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
